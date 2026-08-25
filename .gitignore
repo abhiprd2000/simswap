@@ -1,0 +1,23 @@
+__pycache__/
+*.pyc
+
+# generated run data and analysis outputs - regenerate via fake_runs.py /
+# src/analyze.py / src/sweep.py, not tracked
+runs/
+runs_debug/
+runs_default/
+runs_null/
+tables_default/
+figures_default/
+tables_null/
+figures_null/
+_detectability_work/
+
+# build artifacts from src/failure_analysis.py, src/schema_conformance.py,
+# src/matched_comparison.py, src/permutation_test.py, src/user_id_mentions.py -
+# regenerate by running the scripts against data/, not tracked
+failure_analysis_raw.json
+matched_comparison_raw.json
+schema_conformance_raw.json
+permutation_test_result.json
+user_id_mentions_raw.json
