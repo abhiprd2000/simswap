@@ -1,0 +1,22 @@
+# Analysis pipeline (src/analyze.py, src/detectability.py, src/fake_runs.py) - CPU only
+numpy>=1.26,<2.0
+pandas>=2.0
+scipy>=1.11
+statsmodels>=0.14
+matplotlib>=3.8
+
+# Kaggle GPU side (src/gate1_core.py, kernels/gate1_run.py) - not needed to run
+# src/failure_analysis.py, src/schema_conformance.py, src/matched_comparison.py,
+# src/permutation_test.py, or src/user_id_mentions.py, which only need the stdlib
+# and the JSON files already in data/.
+vllm==0.27.1
+
+# tau2-bench is not published on PyPI under this name - install from the pinned
+# commit instead of a requirements.txt line:
+#   git clone https://github.com/sierra-research/tau2-bench.git /tmp/tau2-bench-src
+#   cd /tmp/tau2-bench-src && git checkout fc0055dc4e0a316c3f83133267fbd6faaa770992
+#   pip install /tmp/tau2-bench-src
+#   export TAU2_DATA_DIR=/tmp/tau2-bench-src/data   # non-editable install needs this
+# tau2-bench pulls in litellm itself; sweep.py talks to vLLM through tau2's own
+# litellm-backed LLM client (llm_agent="openai/<model>", pointed at the local
+# vLLM server's OpenAI-compatible endpoint), not a direct dependency here.
