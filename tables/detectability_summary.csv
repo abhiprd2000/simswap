@@ -1,0 +1,4 @@
+n_tasks,n_seeds,smallest_detected_delta
+15,2,0.2
+20,2,0.12
+20,3,0.12
