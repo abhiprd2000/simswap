@@ -1,0 +1,22 @@
+{
+  "id": "<KAGGLE_USERNAME>/simswap-gate1-run",
+  "title": "simswap-gate1-run",
+  "code_file": "gate1_run.py",
+  "language": "python",
+  "kernel_type": "script",
+  "is_private": true,
+  "enable_gpu": true,
+  "machine_shape": "NvidiaTeslaT4",
+  "enable_internet": true,
+  "dataset_sources": ["<KAGGLE_USERNAME>/simswap-code"],
+  "competition_sources": [],
+  "kernel_sources": [],
+  "environment_variables": {
+    "SIMSWAP_RUN_NAME": "gate1_run",
+    "SIMSWAP_AGENT_MODEL": "Qwen/Qwen2.5-7B-Instruct-AWQ",
+    "SIMSWAP_AGENT_PARSER": "hermes",
+    "SIMSWAP_USER_MODEL": "Qwen/Qwen2.5-7B-Instruct-AWQ",
+    "SIMSWAP_USER_PARSER": "hermes",
+    "SIMSWAP_TASK_INDICES": "0,1,2,3"
+  }
+}
