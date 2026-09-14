@@ -1,0 +1,41 @@
+{
+  "schema_version": 1,
+  "run_id": "passB_awq_task1",
+  "tau2_version": "1.0.1",
+  "tau2_commit": "fc0055dc4e0a316c3f83133267fbd6faaa770992",
+  "simswap_commit": "gate1-diagnostic",
+  "task_id": "1",
+  "domain": "retail",
+  "agent_model": "Qwen/Qwen2.5-7B-Instruct-AWQ",
+  "agent_model_revision": "gate1-live",
+  "user_model": "Qwen/Qwen2.5-7B-Instruct-AWQ",
+  "user_model_revision": "gate1-live",
+  "agent_quantization": "awq-int4",
+  "user_quantization": "awq-int4",
+  "seed": 0,
+  "temperature": 0.0,
+  "gpu_name": "Tesla T4",
+  "timestamp": "2026-08-15T20:59:37.650746",
+  "max_steps": 200,
+  "status": "completed",
+  "termination_reason": "agent_error",
+  "error": null,
+  "task_success": false,
+  "reward": 0.0,
+  "reward_info_note": {
+    "note": "Simulation terminated prematurely. Termination reason: too_many_errors"
+  },
+  "n_turns": 54,
+  "read": {
+    "count": 0,
+    "correct": 0
+  },
+  "write": {
+    "count": 0,
+    "correct": 0
+  },
+  "wall_clock_seconds": 210.17759170700003,
+  "agent_cost": 0.0,
+  "user_cost": 0.0,
+  "transcript_path": "passB_awq_task1_transcript.json"
+}
