@@ -1,0 +1,4 @@
+n_agents,n_tasks,n_seeds,smallest_detected_delta
+2,20,2,0.12
+2,30,2,0.08
+2,40,2,0.06
