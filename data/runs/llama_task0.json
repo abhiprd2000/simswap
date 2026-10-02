@@ -1,0 +1,48 @@
+{
+  "schema_version": 1,
+  "run_id": "llama_vs_qwen7b_task0",
+  "tau2_version": "1.0.1",
+  "tau2_commit": "fc0055dc4e0a316c3f83133267fbd6faaa770992",
+  "simswap_commit": "gate1-diagnostic",
+  "task_id": "0",
+  "domain": "retail",
+  "agent_model": "hugging-quants/Meta-Llama-3.1-8B-Instruct-AWQ-INT4",
+  "agent_model_revision": "gate1-live",
+  "user_model": "Qwen/Qwen2.5-7B-Instruct-AWQ",
+  "user_model_revision": "gate1-live",
+  "agent_quantization": "awq-int4",
+  "user_quantization": "awq-int4",
+  "seed": 0,
+  "temperature": 0.0,
+  "gpu_name": "Tesla T4",
+  "timestamp": "2026-08-16T14:38:00.596450",
+  "max_steps": 200,
+  "status": "completed",
+  "termination_reason": "normal",
+  "error": null,
+  "task_success": false,
+  "reward": 0.0,
+  "reward_info_note": {
+    "env": null,
+    "nl": {
+      "note": "No nl_assertions to evaluate"
+    },
+    "communicate": {
+      "note": "No communicate_info to evaluate"
+    },
+    "action": null
+  },
+  "n_turns": 74,
+  "read": {
+    "count": 4,
+    "correct": 2
+  },
+  "write": {
+    "count": 1,
+    "correct": 0
+  },
+  "wall_clock_seconds": 199.75238742200008,
+  "agent_cost": 0.0,
+  "user_cost": 0.0,
+  "transcript_path": "llama_vs_qwen7b_task0_transcript.json"
+}
