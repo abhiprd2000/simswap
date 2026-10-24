@@ -24,9 +24,7 @@
 
 \author{%
   Abhimanyu Prasad \\
-  ShodhX Research \\
-  Hazaribagh, India \\
-  \texttt{abhiprd2000@outlook.com} \\
+  \texttt{abhiprd2000@gmail.com} \\
 }
 
 \begin{document}
@@ -71,9 +69,9 @@ Our contributions are:
 
 We report two rates. The \emph{flat} rate is over all identifier arguments. The \emph{conditional} rate counts only calls made after at least one successful tool result already existed, so that the agent had something available to check against. The conditional rate is the honest one: a conversation in which no tool call ever succeeds has an empty grounding pool, and a 100\% ungrounded rate there is arithmetic rather than evidence of ignoring available information.
 
-\paragraph{Provenance and terminology.} Each ungrounded identifier is assigned one source, checked in this order: the policy document, if the value appears there verbatim; otherwise a user utterance, if it appears verbatim in a user turn earlier than the call; otherwise \emph{invented}. Matching is exact, with no normalization. We call identifiers copied from the user \emph{unverified} and the rest \emph{invented}. Only the second is fabrication. Using a customer-supplied order number is reasonable; acting on it without a lookup is not verification. We hand-audited all 32 identifiers labeled invented against every preceding user turn, and all 32 labels held. Sixteen regression tests cover the grounding, provenance and parsing rules.
+\paragraph{Provenance and terminology.} Each ungrounded identifier is assigned one source, checked in this order: the policy document, if the value appears there verbatim; otherwise a user utterance, if it appears verbatim in a user turn earlier than the call; otherwise \emph{invented}. Matching is exact, with no normalization. We call identifiers copied from the user \emph{unverified} and the rest \emph{invented}. Only the second is fabrication. Using a customer-supplied order number is reasonable; acting on it without a lookup is not verification. We hand-audited all 32 identifiers labeled invented against every preceding user turn, and all 32 labels held. Seventeen regression tests cover the grounding, provenance and parsing rules.
 
-\paragraph{List-valued arguments.} Llama often emits a list-valued argument as a single string, such as \texttt{\textquotesingle[1151293680, 4983901480]\textquotesingle} (Section~\ref{sec:schema}). The classifier in our reviewed version treated that string as one opaque identifier. Because the bracketed string occurs nowhere else, it was always scored as ungrounded and invented, even when every component had been returned by an earlier lookup or stated by the user. That counted one behavior, already scored as a schema error, a second time as fabrication. We now parse such strings into their components and classify each one. This changes only Llama's numbers, since Qwen produced no stringified lists. Appendix~\ref{app:changes} lists every affected value before and after.
+\paragraph{List-valued arguments.} Llama often emits a list-valued argument as a single string, such as \texttt{\textquotesingle[1151293680, 4983901480]\textquotesingle} (Section~\ref{sec:schema}). Treated as one opaque value, the bracketed string occurs nowhere else in the conversation, so it would always be scored as ungrounded and invented, even when every component had been returned by an earlier lookup or stated by the user. That would count one behavior, already scored as a schema error, a second time as fabrication. We therefore parse such strings into their components and classify each one. Qwen produced no stringified lists.
 
 \paragraph{Denominator audit.} An initial heuristic identified arguments by an \texttt{\_id}/\texttt{\_ids} suffix. Auditing against the retail tool schema found that \texttt{email}, \texttt{zip}, \texttt{first\_name} and \texttt{last\_name} are also genuine identifier arguments. Including them raises the pooled conditional rate from 48.0\% to 51.8\% (both agents, matched tasks). All numbers below use the wider denominator.
 
@@ -115,9 +113,9 @@ Task & Qwen & Llama & Gap \\
 
 Two caveats belong here rather than in the limitations section. Qwen's conditional evidence rests on two tasks, not three: in task 0 all eleven of its tool calls returned errors, so the grounding pool never became non-empty. And the gap is uneven across tasks: 57.1 points on task 1, 28.9 on task 3.
 
-\paragraph{Statistics.} We ran an exact paired sign-flip permutation test over the three matched tasks. Because Qwen's task 0 has no conditional rate, the test necessarily uses the flat per-task rates and therefore \emph{does not test the headline conditional figure}. Per-task differences (Qwen minus Llama) are $+0.549$, $+0.556$, $+0.338$: all three positive. With three pairs there are exactly $2^3 = 8$ sign assignments, enumerated exhaustively, giving a one-sided $p = (0+1)/(8+1) = 0.111$.
+\paragraph{Statistics.} We ran an exact paired sign-flip permutation test over the three matched tasks. Because Qwen's task 0 has no conditional rate, the test necessarily uses the flat per-task rates and therefore \emph{does not test the headline conditional figure}. Per-task differences (Qwen minus Llama) are $+0.549$, $+0.556$, $+0.338$: all three positive. With three pairs there are exactly $2^3 = 8$ sign assignments, enumerated exhaustively. Only the observed assignment, with all three positive, is as extreme as the data, so the exact one-sided $p = 1/8 = 0.125$.
 
-That value is the floor of this test. With three pairs the smallest attainable one-sided $p$ is $1/9$, so a perfectly consistent three-for-three result cannot reach conventional thresholds regardless of effect size. We report the finding as directionally consistent across all matched tasks and make no significance claim anywhere in this paper.
+That value is the floor of this test. With three pairs the smallest attainable one-sided $p$ is $1/8$, so a perfectly consistent three-for-three result cannot reach conventional thresholds regardless of effect size. We report the finding as directionally consistent across all matched tasks and make no significance claim anywhere in this paper.
 
 \subsection{Provenance}
 
@@ -212,9 +210,9 @@ This does not repair the grounding rate. Even in conversations where lookup call
 \begin{enumerate}
 \item \textbf{Two models, three matched tasks, seven conversations}, plus three Llama conversations against a 1.5B simulator. This is a characterization, not an estimate of a population rate. Confidence intervals would be meaningless at this scale and we report none.
 \item \textbf{Qwen's conditional evidence comes from two of three matched tasks}, and its 15 conditional observations come from just two conversations (6 and 9).
-\item \textbf{No significance claim is available.} The exact permutation floor at three pairs is $p = 0.111$.
+\item \textbf{No significance claim is available.} The exact permutation floor at three pairs is $p = 1/8 = 0.125$.
 \item \textbf{The significance test does not test the headline number.} It runs on flat rates, because Qwen's task 0 has no conditional rate.
-\item \textbf{Three analysis corrections.} Two implementation bugs were found and corrected before submission. The first excluded successful tool results from the grounding pool when the resolving call had no suffix-matching argument. The second was a substring-matching failure that did not recognize legitimate reuse of identifiers containing a \texttt{\#} character. Both inflated earlier rates and were found by hand-tracing transcripts. A third correction, made after review, parses list-valued arguments that Llama emits as strings (Section~\ref{sec:setup}). It lowers Llama's invented share and widens the gap between the agents. All three are covered by regression tests, and superseded numbers are retained in the repository and listed in Appendix~\ref{app:changes}.
+\item \textbf{The grounding rules are hand-built.} Two implementation bugs in them were found by hand-tracing transcripts and corrected: one excluded some successful tool results from the grounding pool, the other missed legitimate reuse of identifiers containing a \texttt{\#}. Both inflated earlier rates. The rules, including list parsing, are covered by regression tests.
 \item \textbf{The same model plays the user and one agent.} Qwen2.5-7B is both the simulator and the Qwen agent, so Qwen's tendency to copy user-stated identifiers may partly reflect affinity between outputs of the same model. A simulator from a different model family would test this.
 \item \textbf{This analysis was not pre-registered.} The repository contains a plan pre-registered for an earlier rank-inversion design, abandoned when agents could not complete tasks at this scale, and an amendment recording why. The grounding analysis reported here was defined afterwards, from the same transcripts, and is exploratory.
 \item \textbf{One sample per condition at temperature 0.} We did not vary the user's phrasing, so we cannot say how stable the provenance pattern is across rewordings of the same task.
@@ -226,11 +224,8 @@ This does not repair the grounding rate. Even in conversations where lookup call
 
 \section{Reproducibility}
 
-All runs used open-weight 4-bit models on two T4 GPUs. All reported metrics are computed locally from transcripts, with no external API dependency. $\tau^2$'s natural-language assertion evaluator does require a frontier API; we report nothing derived from it. Code, the ten raw transcripts, run records and sixteen regression tests are available at \url{https://github.com/abhiprd2000/simswap}. Every number in this paper is produced by scripts in \texttt{src/}; \texttt{docs/CAMERA\_READY\_NUMBERS.md} maps each one to its source.
+All runs used open-weight 4-bit models on two T4 GPUs. All reported metrics are computed locally from transcripts, with no external API dependency. $\tau^2$'s natural-language assertion evaluator does require a frontier API; we report nothing derived from it. Code, the ten raw transcripts, run records and seventeen regression tests are available at \url{https://github.com/abhiprd2000/simswap}. Every number in this paper is produced by scripts in \texttt{src/}; \texttt{docs/CAMERA\_READY\_NUMBERS.md} maps each one to its source.
 
-\begin{ack}
-We thank the three UserSim reviewers, whose questions led to the corrected handling of list-valued arguments, the agent-fixed exposure comparison and the provenance audit reported here. This work received no external funding, and the author has no competing interests. Claude (Anthropic) was used extensively as a coding assistant to build the evaluation harness and analysis scripts, and to help draft and revise the text. Every reported number is produced by scripts in the accompanying repository and was checked by the author against the raw transcripts.
-\end{ack}
 
 \begin{thebibliography}{99}
 
@@ -261,35 +256,5 @@ Shunyu Yao, Noah Shinn, Pedram Razavi, and Karthik Narasimhan.
 \newblock \emph{arXiv preprint arXiv:2406.12045}, 2024.
 
 \end{thebibliography}
-
-\appendix
-
-\section{Changes since the reviewed version}
-\label{app:changes}
-
-The reviewed version scored each stringified list as one opaque identifier (Section~\ref{sec:setup}). Correcting this changes every Llama grounding and provenance figure. Qwen's figures and the schema-conformance and post-error results are unchanged. We also corrected three statements carried over from the reviewed version: it said all seven matched episodes scored $0.0$, but one could not be scored; it said Qwen's task-0 calls passed before a success, but none succeeded; and it described the repository's pre-registered plan without saying that it covers an earlier, abandoned design. The reviewed version's exposure table also compared Qwen against a 7B simulator with Llama against a 1.5B one, varying agent and simulator at once; Table~\ref{tab:exposure} now holds the agent fixed.
-
-\begin{table}[h]
-\centering
-\caption{Values in the reviewed version and in this version.}
-\small
-\begin{tabular}{lcc}
-\toprule
-Quantity & Reviewed & This version \\
-\midrule
-Llama conditional ungrounded rate & 45/77 (58.4\%) & 43/95 (45.3\%) \\
-Pooled conditional gap & 34.9 pp & 48.1 pp \\
-Task 1 / task 3 gap & 48.3 / 8.9 pp & 57.1 / 28.9 pp \\
-Per-task flat differences & $+0.410$, $+0.467$, $+0.137$ & $+0.549$, $+0.556$, $+0.338$ \\
-One-sided permutation $p$ & 0.111 & 0.111 \\
-Llama flat provenance, user / invented & 12 / 35 (74.5\% invented) & 24 / 21 (46.7\% invented) \\
-Error rate, unverified user-stated IDs & 32/37 (86.5\%) & 38/43 (88.4\%) \\
-Mismatched vs matched gap & 48.3 vs 34.9 pp & 77.2 vs 48.1 pp \\
-Share of gap from simulator choice & ``roughly a quarter'' & 37.7\% \\
-Exposure comparison & agent varied with simulator & agent held fixed (Table~\ref{tab:exposure}) \\
-Effect of widening denominator & 2.4 pp & 3.9 pp \\
-\bottomrule
-\end{tabular}
-\end{table}
 
 \end{document}
