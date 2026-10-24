@@ -1,12 +1,32 @@
 # Failure analysis — ungrounded tool-call IDs
 
+**AS-SUBMITTED CLASSIFIER NOTE (added 2026-10-18, not in the original
+2026-08-16 text below):** everything in this document, including the
+"headline"/"final"/"THE NUMBER FOR THE ABSTRACT" numbers in Q1/Q2
+below, uses the original, whole-argument (as-submitted) classifier in
+`failure_analysis.py`. That classifier is **no longer primary** — the
+camera-ready paper and `README.md` use **component-level parsing**
+(`src/component_level_grounding.py`) as primary instead, which does
+not double-count a schema-malformed list argument as a second,
+separate invented-ID failure. The as-submitted numbers below are kept
+for disclosure, not deleted, and remain accurate *for that classifier*
+— see `docs/CAMERA_READY_NUMBERS.md` for every number under both
+classifiers side by side, and `docs/COMPONENT_PARSING.md` for why and
+how they differ (the matched conditional rate gap widens under
+component-level, 34.9pp → 48.1pp, while the provenance split narrows,
+77.8% → 48.8% invented — these move in opposite directions, neither
+should be read as a drop-in replacement for the other).
+
 Written 2026-08-16, on operator instruction after the rank-inversion
 design was stopped (0/4 sampled episodes ran to a normal completion,
 so there is no score spread to invert a ranking over — see
 `DECISIONS_NEEDED.md` #0 and #2's update). This is a characterization
 of the failure mode itself, computed from runs already on disk plus
 two rounds of targeted new GPU runs (Llama on additional tasks, see
-below) — not a wider sweep.
+below) — not a wider sweep. **This entire document, including the
+rank-inversion design it replaces, describes exploratory work, not a
+pre-registered analysis** — `ANALYSIS_PLAN.md` covers only the
+abandoned rank-inversion design, not anything below.
 
 **REVISED 2026-08-16, four times on methodology, twice on data, plus
 one independent re-verification.** Methodology history, in order: (1)
@@ -28,8 +48,10 @@ after the agent actually had something it could have checked) sitting
 alongside the flat one — the conditional number is the honest headline
 throughout, not the flat one. Full history in `AUDIT_REPORT.md`.
 **Numbers below are final**: test-covered (`test_failure_analysis.py`,
-11/11 passing, four new cases added across two rounds — see
-`REGRESSION_TESTS.md`) and now include a third Llama task (task3),
+11/11 passing at the time this was written, four new cases added
+across two rounds — see `REGRESSION_TESTS.md`; the suite has since
+grown to 16/16 with later reviewer-response tests, all still passing)
+and now include a third Llama task (task3),
 close to matching Qwen's 4. The tasks-0+1 hand-verification (Q1) was
 independently redone by a separate agent instance, tracing both raw
 JSON transcripts directly, arriving at the identical 16/16 + 23/23 =
@@ -304,13 +326,21 @@ Q1) and an exact paired test needs a real number for every pair. All
 3 tasks show the same direction (Qwen higher): +0.410, +0.467, +0.137.
 Null: each task's sign is exchangeable, 2^3=8 possible sign
 assignments, small enough to enumerate exactly (no Monte Carlo).
-**One-sided p = 1/9 = 0.111, two-sided p = 2/9 = 0.222.** This is the
-smallest possible p-value obtainable with only 3 paired tasks (1/9 is
-the floor of this exact test) - a perfectly consistent 3-for-3 result
-still cannot reach conventional significance (p<0.05) at this sample
-size. Report the direction (consistent across all 3 matched tasks) and
-the effect size (34.9pp conditional gap), not a significance claim -
-none is supportable here, and none was found.
+**One-sided p = 1/8 = 0.125, two-sided p = 2/8 = 0.25.** (Corrected
+2026-10-24: originally reported as 1/9=0.111 / 2/9=0.222, using the
+add-one correction `p=(b+1)/(n+1)` - that correction is for an
+*approximate* test built from a random SAMPLE of sign assignments, not
+for this test, which enumerates all 2^3=8 assignments exhaustively; the
+observed assignment is already one of the 8 outcomes and belongs in
+`b` like any other, so `p=b/n` with no add-one adjustment. See
+`docs/CAMERA_READY_NUMBERS.md`'s "Corrected 2026-10-24" note and
+`src/permutation_test.py`.) This is the smallest possible p-value
+obtainable with only 3 paired tasks (1/8 is the floor of this exact
+test) - a perfectly consistent 3-for-3 result still cannot reach
+conventional significance (p<0.05) at this sample size. Report the
+direction (consistent across all 3 matched tasks) and the effect size
+(34.9pp conditional gap, as-submitted; 48.1pp component-level), not a
+significance claim - none is supportable here, and none was found.
 
 **What this means for the paper**: the headline contrast (rate and
 provenance) survives a common user simulator and should be reported
@@ -331,24 +361,44 @@ why it didn't disappear.
 by every version of this number, flat or conditional, pooled or
 matched.**
 
+**CORRECTION, 2026-10-18**: this section originally quoted Llama's
+pre-matched-user-simulator number here (27/60 = 45.0%, 48.3pp gap) as
+"THE NUMBER FOR THE ABSTRACT", which directly contradicted the
+"CONFOUND CHECK" section above, already present in this same document,
+which had already superseded it with the matched-7B-user rerun. That
+was a stale leftover, not a second finding - fixed below to match the
+CONFOUND CHECK section and to add the current (component-level
+primary) numbers on top.
+
 **THE NUMBER FOR THE ABSTRACT — matched (tasks 0/1/3, both models),
-CONDITIONAL (pool already non-empty at call time):**
+CONDITIONAL (pool already non-empty at call time). As-submitted
+(whole-argument) classifier, matched-7B-user data:**
 
 | model | conditional matched | tasks contributing evidence |
 |---|---|---|
 | Qwen | **14 / 15 = 93.3%** | 2 of 3 (task0 contributes 0/0 — cascade collapse, see Q1) |
-| Llama | **27 / 60 = 45.0%** | 3 of 3 |
+| Llama | **45 / 77 = 58.4%** | 3 of 3 |
 
-**Gap: 48.3 points.** Computed by `matched_comparison.py`, which now
-aggregates the `*_conditional` fields alongside the flat ones — see
-`matched_comparison_raw.json` for full per-task detail. Locked down by
+**Gap: 34.9 points (as-submitted).** Under the **component-level
+classifier used as primary in the camera-ready paper and README**
+(`src/component_level_grounding.py`, `docs/CAMERA_READY_NUMBERS.md`):
+Llama 43/95 = 45.3%, gap **48.1 points** - wider, not narrower, than
+the as-submitted gap, because Llama's measured rate drops substantially
+under component-level parsing while Qwen's (no stringified lists) does
+not move at all. Computed by `matched_comparison.py` (as-submitted) /
+`component_level_grounding.py` (component-level), which both aggregate
+the `*_conditional` fields alongside the flat ones — see
+`matched_comparison_raw.json` / `component_level_grounding_raw.json`
+for full per-task detail. Locked down by
 `test_matched_pool_aggregates_correctly` (`REGRESSION_TESTS.md`).
 
 **This is not simply the flat matched number with the edges sanded
-off — it survives the operator's correction almost unchanged in gap
-size (48.3 vs 48.2 points), while both models' own numbers move down
-somewhat (Qwen 98.2%→93.3%, Llama 50.0%→45.0%), because removing
-empty-pool calls removes noise from both sides, not just Qwen's.** The
+off — it survives the conditional restriction with the same direction
+and a broadly similar size (34.9pp conditional vs. 38.7pp flat,
+as-submitted — a real but modest ~4pp narrowing, not a collapse),
+while both models' own numbers move down somewhat (Qwen 98.2%→93.3%,
+Llama 59.5%→58.4% as-submitted), because removing empty-pool calls
+removes noise from both sides, not just Qwen's.** The
 one asymmetry worth flagging honestly: Qwen's conditional evidence
 comes from only 2 of its 3 matched tasks (task0 contributes nothing —
 its pool never fills, see Q1's cascade table), while Llama's comes
@@ -409,16 +459,39 @@ task0 was 57.1%/42.9% invented/user, task1 was 83.3%/16.7%, task3 was
 the user). Consistently invention-majority across all three tasks —
 the direction never flipped once across three independent samples.
 
-**This is now a robust, three-task-supported contrast, close to
-parity with Qwen's sample size**: Qwen is user-trust-majority (82.6%
-user-sourced) and Llama is invention-majority (81.8% invented) — these
-two numbers are now nearly mirror images of each other. Combined with
-Q2, the fuller picture: Qwen fails more often (80.2% vs 50.0%) but its
-failures are mostly "trusted an unverified claim," while Llama fails
-less often but the large majority of its failures are "fabricated
-from nothing."
+**CORRECTION, 2026-10-18**: these 81.8%/18.2% figures are from the
+**original, pre-matched-user-simulator** Llama runs (the 1.5B user) —
+the exact number the "CONFOUND CHECK" section above already calls
+"superseded, not just a footnote caveat." The current, matched (7B
+user) split is 25.5% user / 74.5% invented, as-submitted classifier
+(flat); 53.3% user / 46.7% invented, component-level classifier
+(primary) — see `docs/CAMERA_READY_NUMBERS.md`. Left below as the
+original historical finding, not as a current claim.
+
+**This was a robust, three-task-supported contrast when first written,
+close to parity with Qwen's sample size**: Qwen is user-trust-majority
+(82.6% user-sourced) and Llama was invention-majority (81.8% invented)
+— these two numbers were nearly mirror images of each other at the
+time. Combined with Q2, the fuller picture then: Qwen fails more often
+(80.2% vs 50.0%) but its failures are mostly "trusted an unverified
+claim," while Llama fails less often but the large majority of its
+failures were "fabricated from nothing." The matched-user-simulator
+rerun (CONFOUND CHECK, above) and the component-level reclassification
+(`docs/CAMERA_READY_NUMBERS.md`) both still show Llama as
+higher-invented-share than Qwen's ~0%, just not by this margin.
 
 ## Q4 — what does the agent do right after an error?
+
+**CORRECTION, 2026-10-18**: the table below (n=51 error events) predates
+the matched-user-simulator rerun and is superseded by the CONFOUND
+CHECK section's own later reference in this same document ("Post-error
+next-action pooled over the new matched set: lookup-tool remains the
+plurality reaction, 29/56 = 51.8%"). The current, correct pooled
+table (n=56, identical under either grounding classifier since this
+metric never touches id-level grounding/provenance) is in
+`docs/PAPER_NUMBERS.md`/`docs/CAMERA_READY_NUMBERS.md` and
+`paper/main.tex` Table 5. Kept below as the original, smaller-sample
+finding, not as the current number.
 
 Computed precisely per error event (not the coarser field-pooled
 heuristic used for Q1-Q3, and entirely independent of the grounding
@@ -457,8 +530,9 @@ non-identifying field (`reason`, `address1/2`, `city`, `state`,
 `country`, `summary`, `expression`) not meaningful to check for
 "grounding" in this sense. The grounding-match logic, the flat/
 conditional/cascade tracking, schema-conformance checks, and the
-matched-comparison aggregation are covered by 11 regression tests
-(`REGRESSION_TESTS.md`, `test_failure_analysis.py`, 11/11 passing)
+matched-comparison aggregation are covered by regression tests
+(`REGRESSION_TESTS.md`, `test_failure_analysis.py`, 11/11 at the time
+this was written, now 16/16 after later reviewer-response additions)
 after two rounds of real bugs, one methodology correction (flat vs.
 conditional rate), and two independent hand-verification passes (Q1) —
 this doesn't guarantee no further issues, but the specific failure
