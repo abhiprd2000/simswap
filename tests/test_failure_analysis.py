@@ -21,8 +21,10 @@ import tempfile
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
+import component_level_grounding as clg
 import failure_analysis as fa
 import matched_comparison as mc
+import permutation_test as pt
 import schema_conformance as sc
 
 FIXTURE_DIR = Path(tempfile.mkdtemp(prefix="simswap_regtest_"))
@@ -361,6 +363,98 @@ def test_matched_pool_aggregates_correctly():
     assert pooled["ungrounded_fraction_by_argument_conditional"] == 0.25
     assert pooled["n_tasks_with_conditional_data"] == 1
     assert pooled["n_tasks_pool_never_nonempty"] == 1
+
+
+@case
+def test_classify_origin_exact_user_match():
+    """A value stated verbatim by the user, including inside backticks
+    (the real transcripts' markdown style), classifies as user_utterance."""
+    origin = fa.classify_origin("1008292230", "", ["the item ID is `1008292230`, confirmed"])
+    assert origin == "user_utterance", f"expected user_utterance, got {origin}"
+
+
+@case
+def test_classify_origin_policy_beats_user_utterance():
+    """REAL CHECK ORDER, locked down: classify_origin checks policy_text
+    BEFORE user_texts. A value present in both must classify as
+    policy_document, not user_utterance - see docs/PROVENANCE.md."""
+    origin = fa.classify_origin("SHARED-VALUE", "policy text mentions SHARED-VALUE here",
+                                 ["the user also says SHARED-VALUE"])
+    assert origin == "policy_document", (
+        f"expected policy_document (policy is checked first), got {origin}"
+    )
+
+
+@case
+def test_classify_origin_hash_prefix_not_normalized():
+    """KNOWN LIMITATION, not a desired behavior: no '#' normalization is
+    applied. A value with a leading '#' that the user's text never
+    literally included (even though the digits match) classifies as
+    invented, not user_utterance. See docs/PROVENANCE.md."""
+    origin = fa.classify_origin("#W2378156", "", ["my order ID is W2378156, please check it"])
+    assert origin == "invented", (
+        f"expected invented (current code does not strip '#'), got {origin}. "
+        "If this starts passing as user_utterance, normalization was added - "
+        "update docs/PROVENANCE.md to match, don't just adjust this assertion."
+    )
+
+
+@case
+def test_classify_origin_true_invention():
+    """A value absent from both policy and every user turn classifies as
+    invented."""
+    origin = fa.classify_origin("NEVER-SAID-THIS", "policy text has nothing like it",
+                                 ["user turn one", "user turn two"])
+    assert origin == "invented", f"expected invented, got {origin}"
+
+
+@case
+def test_component_parsed_stringified_list_grounds_via_earlier_user_turn():
+    """A5 regression test (reviewer response, docs/COMPONENT_PARSING.md):
+    a malformed stringified-list id argument (the real llama
+    "[1151293680, 4983901480]" shape) must, under COMPONENT-LEVEL
+    parsing (component_level_grounding.py, a separate analysis - this
+    does NOT touch failure_analysis.py's default classifier), split
+    into its component IDs and classify each independently. A
+    component the user stated in an EARLIER turn must come out
+    user_utterance, not invented, even though the merged bracketed
+    string as actually submitted never matches anything literally."""
+    messages = [
+        user_msg("My item IDs are AAA-1 and BBB-2."),
+        tool_call("exchange_delivered_order_items", {
+            "order_id": "#O1", "item_ids": "[AAA-1, BBB-2]",
+            "new_item_ids": "[CCC-3]", "payment_method_id": "pm_1",
+        }),
+        tool_result("Error: not found", error=True),
+    ]
+    path = make_fixture("component_parse", messages)
+    result = clg.analyze_conversation_component_parsed("component_parse", path)
+    ids = result["tool_calls_log"][0]["ids"]
+
+    aaa = next(x for x in ids if x["field"] == "item_ids" and x["value"] == "AAA-1")
+    bbb = next(x for x in ids if x["field"] == "item_ids" and x["value"] == "BBB-2")
+    ccc = next(x for x in ids if x["field"] == "new_item_ids" and x["value"] == "CCC-3")
+
+    assert aaa["grounded"] is False and aaa["origin"] == "user_utterance", aaa
+    assert bbb["grounded"] is False and bbb["origin"] == "user_utterance", bbb
+    assert ccc["grounded"] is False and ccc["origin"] == "invented", ccc
+
+
+@case
+def test_exact_permutation_p_value_uses_full_enumeration_not_sample_correction():
+    """Fixed 2026-10-24: exact_perm_test enumerates all 2**n sign
+    assignments EXHAUSTIVELY, not a random sample - so p = b/n, with
+    the observed assignment counted in b like any other outcome. The
+    "(b+1)/(n+1)" add-one correction (the previous, wrong formula here)
+    is only valid for an approximate test built from a finite random
+    SAMPLE of assignments; applying it to a full enumeration silently
+    inflates every p-value. Three positive, unequal diffs (n=3, 8 sign
+    assignments) must give one-sided p = 1/8 = 0.125 exactly, not
+    1/9 = 0.111."""
+    result = pt.exact_perm_test([0.41, 0.47, 0.14])
+    assert result["n_perms"] == 8, f"expected 8 sign assignments for n=3, got {result['n_perms']}"
+    assert result["p_one_sided"] == 0.125, f"expected exactly 1/8 = 0.125, got {result['p_one_sided']}"
+    assert result["p_two_sided"] == 0.25, f"expected exactly 2/8 = 0.25, got {result['p_two_sided']}"
 
 
 @case

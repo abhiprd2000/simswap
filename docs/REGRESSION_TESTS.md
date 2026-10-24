@@ -84,6 +84,40 @@ a hypothetical exercise. See "What the tests actually caught" below.
     parallel-tool-call rejection has no transcript to derive it from, so
     nothing else would catch it being silently deleted in a future edit;
     confirms it's present for llama and absent for qwen.
+12. **`test_classify_origin_exact_user_match`** (added 2026-10-12,
+    reviewer response, `docs/PROVENANCE.md`) — a value stated verbatim
+    by the user, including wrapped in backticks (the real transcripts'
+    markdown style), classifies as `user_utterance`.
+13. **`test_classify_origin_policy_beats_user_utterance`** (added
+    2026-10-12) — locks in the REAL check order in `classify_origin`:
+    policy is checked before user text. A value present in both must
+    classify as `policy_document`, not `user_utterance`.
+14. **`test_classify_origin_hash_prefix_not_normalized`** (added
+    2026-10-12) — KNOWN LIMITATION, not a desired behavior: no `#`
+    normalization is applied anywhere. A value with a leading `#` that
+    the user's text never literally included classifies as `invented`
+    even when the digits match. Locks in current behavior so a future
+    normalization change is a deliberate decision, not a silent diff.
+15. **`test_classify_origin_true_invention`** (added 2026-10-12) — a
+    value absent from both policy and every user turn classifies as
+    `invented`.
+16. **`test_component_parsed_stringified_list_grounds_via_earlier_user_turn`**
+    (added 2026-10-12, reviewer response A5, `docs/COMPONENT_PARSING.md`)
+    — a malformed stringified-list id argument (the real llama
+    `"[1151293680, 4983901480]"` shape), under
+    `component_level_grounding.py`'s COMPONENT-LEVEL parsing (a separate
+    analysis, does not touch `failure_analysis.py`), must split into its
+    component IDs and classify each independently - a component stated
+    by the user in an earlier turn comes out `user_utterance`, not
+    `invented`.
+17. **`test_exact_permutation_p_value_uses_full_enumeration_not_sample_correction`**
+    (added 2026-10-24, `docs/CAMERA_READY_NUMBERS.md`'s "Corrected
+    2026-10-24" note) — `permutation_test.py`'s exact-enumeration
+    p-value must be `p = b/n` (b including the observed sign
+    assignment), not the sample-based `p = (b+1)/(n+1)` this script
+    used before. Three positive, unequal diffs over n=3 (8 sign
+    assignments) must give one-sided p = 1/8 = 0.125 exactly, not
+    1/9 = 0.111 - locks in the real bug this test was written to catch.
 
 ## The conditional rate (2026-08-16, operator correction)
 
@@ -102,8 +136,11 @@ additive - the existing `is_grounded_in`/`id_values`/causal-ordering
 logic (tests 1-6 above) is unchanged and still passes exactly as
 before. `matched_comparison.py`'s `pool()` aggregates the new fields
 too. Full result in `FAILURE_ANALYSIS.md` Q1/Q2 - the conditional
-matched number (Qwen 93.3%, Llama 45.0%) is now the headline, not the
-flat matched number (98.2%/50.0%) this document previously pointed to.
+matched number (Qwen 93.3%, Llama 45.0%, against the 1.5B user at the
+time this was written) was the headline then, not the flat matched
+number (98.2%/50.0%) this document previously pointed to - both since
+superseded by the matched-7B-user rerun (58.4% as-submitted, 45.3%
+component-level primary - see `docs/CAMERA_READY_NUMBERS.md`).
 
 ## What the tests actually caught
 
@@ -169,18 +206,25 @@ PASS: test_schema_conformance_detects_str_instead_of_list
 PASS: test_empty_pool_conversation_has_no_conditional_evidence
 PASS: test_conditional_rate_excludes_only_pre_success_calls
 PASS: test_matched_pool_aggregates_correctly
+PASS: test_classify_origin_exact_user_match
+PASS: test_classify_origin_policy_beats_user_utterance
+PASS: test_classify_origin_hash_prefix_not_normalized
+PASS: test_classify_origin_true_invention
+PASS: test_component_parsed_stringified_list_grounds_via_earlier_user_turn
+PASS: test_exact_permutation_p_value_uses_full_enumeration_not_sample_correction
 PASS: test_schema_conformance_records_llama_parallel_tool_call_rejection
 
-11/11 passed
+17/17 passed
 ```
 
 Re-run this after any change to `failure_analysis.py`'s grounding or
 conditional/cascade logic (`is_grounded_in`, `id_values`, the
 causal-ordering walk, or the `pool_nonempty`/`cascade` tracking in
 `analyze_conversation`), `schema_conformance.py`'s type checks or
-`NON_TRANSCRIPT_EVENTS`, or `matched_comparison.py`'s pooling
-(including the conditional aggregation). A change that breaks any of
-these 11 cases should not ship without understanding why.
+`NON_TRANSCRIPT_EVENTS`, `matched_comparison.py`'s pooling (including
+the conditional aggregation), or `permutation_test.py`'s
+`exact_perm_test()`. A change that breaks any of these 17 cases should
+not ship without understanding why.
 
 ## Second hand-verification pass (2026-08-16, independent re-check)
 
