@@ -3,7 +3,6 @@ __pycache__/
 
 # generated run data and analysis outputs - regenerate via fake_runs.py /
 # src/analyze.py / src/sweep.py, not tracked
-runs/
 runs_debug/
 runs_default/
 runs_null/
@@ -21,3 +20,7 @@ matched_comparison_raw.json
 schema_conformance_raw.json
 permutation_test_result.json
 user_id_mentions_raw.json
+src/*_raw.json
+
+# working log - kept on disk, not published
+PROGRESS.md
