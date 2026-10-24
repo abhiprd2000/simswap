@@ -9,7 +9,7 @@ matplotlib>=3.8
 # src/failure_analysis.py, src/schema_conformance.py, src/matched_comparison.py,
 # src/permutation_test.py, or src/user_id_mentions.py, which only need the stdlib
 # and the JSON files already in data/.
-vllm==0.27.1
+vllm==0.28.0
 
 # tau2-bench is not published on PyPI under this name - install from the pinned
 # commit instead of a requirements.txt line:
