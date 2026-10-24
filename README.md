@@ -27,7 +27,7 @@ ANALYSIS_PLAN.md              pre-registered design for the ABANDONED rank-inver
                                covered by this plan
 ANALYSIS_PLAN_AMENDMENT.md    what changed from that plan, and why it was stopped
 src/                          all analysis and harness code
-tests/                        regression tests for the grounding/schema logic (16/16)
+tests/                        regression tests for the grounding/schema logic (17/17)
 kernels/                      the one parameterized Kaggle kernel script
 data/runs/                    final run records, 10 files: 7 matched-simulator
                                conversations (4 Qwen + 3 Llama, both against the
@@ -77,7 +77,7 @@ every number in `docs/CAMERA_READY_NUMBERS.md` under both classifiers in one run
 Run from the repository root, in this order:
 
 ```
-python tests/test_failure_analysis.py       # 16/16 regression tests must pass
+python tests/test_failure_analysis.py       # 17/17 regression tests must pass
 python src/failure_analysis.py              # writes failure_analysis_raw.json (as-submitted classifier) -
                                              # Table 1 (grounding), Table 2 (provenance), Table 5 (post-error)
 python src/matched_comparison.py            # pools the above over tasks {0,1,3} - Table 1's as-submitted numbers
@@ -170,7 +170,7 @@ existed; its headline numbers are the as-submitted ones, kept for disclosure, no
 primary ones. `docs/SCHEMA_CONFORMANCE.md` covers the second failure axis (unaffected by
 either classifier choice). `docs/AUDIT_REPORT.md` documents two real bugs found and fixed
 mid-study (both now covered by the regression tests in `tests/`). `docs/REGRESSION_TESTS.md`
-explains what each of the 16 tests guards against. `docs/PROVENANCE.md`,
+explains what each of the 17 tests guards against. `docs/PROVENANCE.md`,
 `docs/COMPONENT_PARSING.md`, `docs/TABLE4_METRIC_DEFINITIONS.md`, `docs/PAPER_NUMBERS.md`,
 and `docs/CAMERA_READY_NUMBERS.md` are the later reviewer-response documents that
 introduced and fully reconciled the component-level classifier - `CAMERA_READY_NUMBERS.md`
