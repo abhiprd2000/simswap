@@ -2,7 +2,17 @@
 
 Tool-call grounding failures in tau2-bench agents differ by model in both rate and
 provenance, and the contrast survives holding the user simulator fixed across agents. See
-`paper/PAPER.md` for the full writeup; this README reproduces every number in it.
+`paper/main.tex` for the camera-ready writeup (compiles to `paper/main.pdf`); this README
+reproduces every number in it, computed with the **component-level classifier**
+(`src/component_level_grounding.py`) used as primary throughout - see
+"Two classifiers" below.
+
+**The grounding/provenance analysis in this README and `src/` is exploratory, not
+pre-registered.** `ANALYSIS_PLAN.md` covers only the original rank-inversion design, which
+was abandoned before any of the grounding work below existed (see
+`ANALYSIS_PLAN_AMENDMENT.md`'s stop note and `docs/FAILURE_ANALYSIS.md`'s opening
+paragraph). Nothing about identifier grounding, provenance, schema conformance, or the
+user-simulator mechanism check was specified in advance.
 
 Anonymized for double-blind review: no author names, emails, or account handles appear
 anywhere in this repository. Kaggle kernel/dataset ids in `kernels/` use a
@@ -11,17 +21,27 @@ anywhere in this repository. Kaggle kernel/dataset ids in `kernels/` use a
 ## Layout
 
 ```
-ANALYSIS_PLAN.md              pre-registered design (untouched after real data landed)
-ANALYSIS_PLAN_AMENDMENT.md    what changed from the plan, and why
+ANALYSIS_PLAN.md              pre-registered design for the ABANDONED rank-inversion
+                               study only (untouched) - the grounding analysis below is
+                               a separate, later, exploratory characterization, not
+                               covered by this plan
+ANALYSIS_PLAN_AMENDMENT.md    what changed from that plan, and why it was stopped
 src/                          all analysis and harness code
-tests/                        regression tests for the grounding/schema logic
+tests/                        regression tests for the grounding/schema logic (16/16)
 kernels/                      the one parameterized Kaggle kernel script
-data/runs/                    final run records (7 conversations) used in the paper
-data/raw/                     full tau2 transcripts for those same 7 conversations
-tables/                       CSV tables cited in ANALYSIS_PLAN*.md / the paper
-docs/                         methodology writeups: grounding, schema conformance,
-                               the audit history, and the regression-test rationale
-paper/                        PAPER.md (source) and main.tex (NeurIPS 2026 template)
+data/runs/                    final run records, 10 files: 7 matched-simulator
+                               conversations (4 Qwen + 3 Llama, both against the
+                               Qwen2.5-7B-Instruct-AWQ user) used for the headline
+                               numbers, plus 3 archival Llama-vs-1.5B-user conversations
+                               (`*_1.5b_user.json`) used only for Table 4/the mechanism
+                               finding - see the note below, don't mix the two sets
+data/raw/                     full tau2 transcripts for those same 10 conversations
+tables/                       CSV tables cited in ANALYSIS_PLAN*.md
+docs/                         methodology writeups: grounding, schema conformance, the
+                               audit history, the regression-test rationale, and the
+                               component-level-vs-as-submitted numbers
+paper/                        main.tex (NeurIPS 2026 template, camera-ready source) and
+                               main.pdf (compiled) - this is the paper; do not edit main.tex
 ```
 
 ## Setup
@@ -33,18 +53,41 @@ pip install -r requirements.txt
 `vllm==0.27.1` is only needed to reproduce the GPU runs (see "Reproducing the raw runs"
 below) - everything else in this README runs on CPU from the JSON files already in `data/`.
 
+## Two classifiers: component-level (primary) vs. as-submitted (disclosure)
+
+Llama frequently submits `item_ids`/`new_item_ids` as a string that merely *looks* like a
+list (e.g. `"[1151293680, 4983901480]"`) instead of a real JSON list - a schema violation
+already counted on its own axis (Table 3 below). Scoring that same malformed string as an
+invented/ungrounded ID a second time, on the grounding axis, double-counts one behavior.
+**Component-level parsing** (`src/component_level_grounding.py`) decomposes it into its
+component ID strings before grounding/provenance is checked - this is the primary
+classifier for every headline number in this README and in `paper/main.tex`. It never
+changes Qwen's numbers (Qwen never emits this malformation). The original, as-submitted
+(whole-argument) classifier in `src/failure_analysis.py` is unchanged and its numbers are
+kept throughout for disclosure - see `docs/COMPONENT_PARSING.md` and
+`docs/CAMERA_READY_NUMBERS.md` for every number under both, side by side.
+
+**Headline numbers (component-level, matched tasks {0,1,3}):** Qwen2.5-7B-Instruct-AWQ
+93.3% conditional ungrounded; Llama-3.1-8B-Instruct-AWQ-INT4 45.3% conditional ungrounded
+(gap 48.1pp). As-submitted: 93.3% / 58.4% (gap 34.9pp). `src/paper_numbers.py` reproduces
+every number in `docs/CAMERA_READY_NUMBERS.md` under both classifiers in one run.
+
 ## Reproducing the paper's tables (no GPU needed)
 
 Run from the repository root, in this order:
 
 ```
-python tests/test_failure_analysis.py       # 11/11 regression tests must pass
-python src/failure_analysis.py              # writes failure_analysis_raw.json - Table 1 (grounding),
-                                             # Table 3 (provenance), Table 5 (post-error next action)
-python src/matched_comparison.py            # pools the above over tasks {0,1,3} - Table 1's headline numbers
-python src/schema_conformance.py            # Table 2 (schema conformance)
-python src/permutation_test.py              # the exact paired permutation test in §3.1
-python src/user_id_mentions.py              # Table 4 (mechanism) - Qwen side only, see note below
+python tests/test_failure_analysis.py       # 16/16 regression tests must pass
+python src/failure_analysis.py              # writes failure_analysis_raw.json (as-submitted classifier) -
+                                             # Table 1 (grounding), Table 2 (provenance), Table 5 (post-error)
+python src/matched_comparison.py            # pools the above over tasks {0,1,3} - Table 1's as-submitted numbers
+python src/component_level_grounding.py     # the component-level recompute of Tables 1/2 - PRIMARY classifier
+python src/schema_conformance.py            # Table 3 (schema conformance) - identical under either classifier
+python src/permutation_test.py              # the exact paired permutation test in §3.1 (as-submitted rates;
+                                             # same p-value under component-level, see docs/CAMERA_READY_NUMBERS.md)
+python src/user_id_mentions.py              # Table 4 (mechanism) - see note below
+python src/paper_numbers.py                 # every number in the paper, both classifiers side by side -
+                                             # reproduces docs/CAMERA_READY_NUMBERS.md exactly
 ```
 
 Each script prints its numbers and writes a `*_raw.json` file (gitignored, regenerate on
@@ -61,9 +104,10 @@ headline number but still cited for the mechanism finding.
 
 **Two Llama run sets, don't mix them up:** `data/{raw,runs}/llama_task{0,1,3}.json`
 (matched simulator, Qwen2.5-7B-Instruct-AWQ user) feed Sections 3.1-3.2 and the paper's
-headline 93.3%/58.4% numbers. `data/{raw,runs}/llama_task{0,1,3}_1.5b_user.json`
+headline numbers (93.3%/45.3% conditional, component-level; 93.3%/58.4%, as-submitted).
+`data/{raw,runs}/llama_task{0,1,3}_1.5b_user.json`
 (Qwen2.5-1.5B-Instruct user, the original confounded design) feed only Table 4 and the
-Section 3.3 confound discussion - do not use them for anything else.
+Section 3.4 mechanism/confound discussion - do not use them for anything else.
 
 ## Reproducing the raw GPU runs
 
@@ -112,15 +156,24 @@ control - `src/analyze.py` must not report a finding there.
 
 ## Paper
 
-`paper/PAPER.md` is the source (Markdown). `paper/main.tex` is the NeurIPS 2026 template
-version, same content. Every number in both traces to a file in this repository via the
-commands above; `paper/PAPER.md` names the exact script for each table in its
-Reproducibility section.
+`paper/main.tex` is the camera-ready source (NeurIPS 2026 template); `paper/main.pdf` is
+the compiled version. `main.tex` is not edited by any automated pass in this repository -
+every number it reports should be checked against `docs/CAMERA_READY_NUMBERS.md` before
+submission, since that document (not this README, not `main.tex` itself) is the
+cross-checked source of truth for what each number is under both classifiers.
 
 ## Docs
 
 `docs/FAILURE_ANALYSIS.md` is the full methodology writeup (grounding definition, flat vs.
-conditional rate, the confound check). `docs/SCHEMA_CONFORMANCE.md` covers the second
-failure axis. `docs/AUDIT_REPORT.md` documents two real bugs found and fixed mid-study
-(both now covered by the regression tests in `tests/`). `docs/REGRESSION_TESTS.md`
-explains what each of the 11 tests guards against.
+conditional rate, the confound check) - written before the component-level classifier
+existed; its headline numbers are the as-submitted ones, kept for disclosure, not the
+primary ones. `docs/SCHEMA_CONFORMANCE.md` covers the second failure axis (unaffected by
+either classifier choice). `docs/AUDIT_REPORT.md` documents two real bugs found and fixed
+mid-study (both now covered by the regression tests in `tests/`). `docs/REGRESSION_TESTS.md`
+explains what each of the 16 tests guards against. `docs/PROVENANCE.md`,
+`docs/COMPONENT_PARSING.md`, `docs/TABLE4_METRIC_DEFINITIONS.md`, `docs/PAPER_NUMBERS.md`,
+and `docs/CAMERA_READY_NUMBERS.md` are the later reviewer-response documents that
+introduced and fully reconciled the component-level classifier - `CAMERA_READY_NUMBERS.md`
+is the final, authoritative claim-by-claim table (component-level primary, as-submitted
+alongside for disclosure) and should be treated as the source of truth over any number
+quoted elsewhere in `docs/`.
