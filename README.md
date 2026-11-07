@@ -1,5 +1,7 @@
 # simswap
 
+Accepted at UserSim, the NeurIPS 2026 Workshop on Grounded User Simulation for Model Evaluation and Training: Diversity, Fidelity, and Validity. Paper: [PDF](paper/main.pdf), [NeurIPS page](https://neurips.cc/virtual/2026/169228).
+
 Tool-call grounding failures in tau2-bench agents differ by model in both rate and
 provenance, and the contrast survives holding the user simulator fixed across agents. See
 `paper/main.tex` for the camera-ready writeup (compiles to `paper/main.pdf`); this README
