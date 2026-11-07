@@ -1,0 +1,20 @@
+cff-version: 1.2.0
+message: "If you use this work, please cite it as below."
+title: "Same Failure, Different Cause: Ungrounded Tool-Call Provenance in Simulated Agent Evaluation"
+authors:
+  - family-names: Prasad
+    given-names: Abhimanyu
+    orcid: "https://orcid.org/0009-0003-6740-3445"
+url: "https://github.com/abhiprd2000/simswap"
+preferred-citation:
+  type: conference-paper
+  title: "Same Failure, Different Cause: Ungrounded Tool-Call Provenance in Simulated Agent Evaluation"
+  authors:
+    - family-names: Prasad
+      given-names: Abhimanyu
+      orcid: "https://orcid.org/0009-0003-6740-3445"
+  collection-title: "NeurIPS 2026 Workshop on Grounded User Simulation for Model Evaluation and Training: Diversity, Fidelity, and Validity"
+  conference:
+    name: "NeurIPS 2026 Workshop on Grounded User Simulation for Model Evaluation and Training: Diversity, Fidelity, and Validity"
+  year: 2026
+  url: "https://openreview.net/forum?id=DVa9SVOw5s"
